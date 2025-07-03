@@ -8,7 +8,9 @@ export const convertApiTaskToTask = (apiTask:ApiTask):Task=>{
         description: apiTask.description,
         status: convertApiStatusToStatus(apiTask.status),
         priority: convertApiPriorityToPriority(apiTask.priority),
-        createdAt: new Date(apiTask.createdAt)
+        createdAt: new Date(apiTask.createdAt),
+        dueDate: apiTask.dueDate ? new Date(apiTask.dueDate) : undefined,
+        hasNotification: apiTask.hasNotification
     };
 };
 
@@ -17,42 +19,44 @@ export const convertTaskToCreateRequest=(task:Omit<Task, 'id'|'createdAt'>):Crea
         title: task.title,
         description: task.description,
         status: convertStatusToApiStatus(task.status),
-        priority: convertPriorityToApiPriority(task.priority)
+        priority: convertPriorityToApiPriority(task.priority),
+        dueDate: task.dueDate ? task.dueDate.toISOString() : undefined,
+        hasNotification: task.hasNotification
     };
 }
 
 const convertStatusToApiStatus = (status:Task['status']):ApiTask['status']=>{
     switch (status){
-        case 'todo': return 'Todo';
-        case 'inprogress': return 'InProgress';
-        case 'done': return 'Done';
-        default: return 'Todo';
+        case 'todo': return 0;
+        case 'inprogress': return 1;
+        case 'done': return 2;
+        default: return 0;
     }
 };
 
 const convertPriorityToApiPriority = (priority:Task['priority']):ApiTask['priority']=>{
     switch (priority){
-        case 'low': return 'Low';
-        case 'medium': return 'Medium';
-        case 'high': return 'High';
-        default: return 'Low';
+        case 'low': return 1;
+        case 'medium': return 2;
+        case 'high': return 3;
+        default: return 1;
     }
 };
 
 const convertApiStatusToStatus = (status:ApiTask['status']):Task['status']=>{
     switch (status){
-        case 'Todo': return 'todo';
-        case 'InProgress': return 'inprogress';
-        case 'Done': return 'done';
+        case 0: return 'todo';
+        case 1: return 'inprogress';
+        case 2: return 'done';
         default: return 'todo';
     }
 };
 
 const convertApiPriorityToPriority = (priority:ApiTask['priority']):Task['priority']=>{
     switch (priority){
-        case 'Low': return 'low';
-        case 'Medium': return 'medium';
-        case 'High': return 'high';
+        case 1: return 'low';
+        case 2: return 'medium';
+        case 3: return 'high';
         default: return 'low';
     }
 };

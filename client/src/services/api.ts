@@ -4,17 +4,21 @@ export interface ApiTask {
     id: number,
     title: string,
     description?: string,
-    status: 'Todo' | 'InProgress' | 'Done';
-    priority: 'Low' | 'Medium' | 'High';
+    status: number; // 0 = Todo, 1 = InProgress, 2 = Done
+    priority: number; // 1 = Low, 2 = Medium, 3 = High
     createdAt: string;
     updatedAt: string;
+    dueDate?: string;
+    hasNotification?: boolean;
 }
 
 export interface CreateTaskRequest {
     title: string,
     description?: string,
-    status: 'Todo' | 'InProgress' | 'Done';
-    priority: 'Low' | 'Medium' | 'High';
+    status: number; // 0 = Todo, 1 = InProgress, 2 = Done
+    priority: number; // 1 = Low, 2 = Medium, 3 = High
+    dueDate?: string;
+    hasNotification?: boolean;
 }
 
 class ApiService {

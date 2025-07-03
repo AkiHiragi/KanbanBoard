@@ -1,5 +1,6 @@
 import {Priority, Task} from "../types";
-import React, {use, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
+import { format } from 'date-fns';
 
 interface TaskModalProps {
     isOpen: boolean;
@@ -13,23 +14,36 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<Priority>('medium');
+    const [dueDate, setDueDate] = useState<string>('');
+    const [hasNotification, setHasNotification] = useState(false);
 
     useEffect(() => {
         if (task) {
             setTitle(task.title);
             setDescription(task.description || '');
             setPriority(task.priority);
+            setDueDate(task.dueDate ? format(task.dueDate, 'yyyy-MM-dd\'T\'HH:mm') : '');
+            setHasNotification(task.hasNotification || false);
         } else {
             setTitle('');
             setDescription('');
             setPriority('medium');
+            setDueDate('');
+            setHasNotification(false);
         }
     }, [task]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (title.trim()) {
-            onSave({title: title.trim(), description: description.trim(), status, priority});
+            onSave({
+                title: title.trim(), 
+                description: description.trim(), 
+                status, 
+                priority,
+                dueDate: dueDate ? new Date(dueDate) : undefined,
+                hasNotification: dueDate ? hasNotification : false
+            });
             onClose();
         }
     };
@@ -61,6 +75,29 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
                         <option value="medium">🟡 Средний</option>
                         <option value="high">🔴 Высокий</option>
                     </select>
+                    
+                    <div className="form-group">
+                        <label htmlFor="dueDate">Дедлайн:</label>
+                        <input
+                            type="datetime-local"
+                            id="dueDate"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                        />
+                    </div>
+                    
+                    {dueDate && (
+                        <div className="form-group checkbox">
+                            <input
+                                type="checkbox"
+                                id="hasNotification"
+                                checked={hasNotification}
+                                onChange={(e) => setHasNotification(e.target.checked)}
+                            />
+                            <label htmlFor="hasNotification">Включить уведомление</label>
+                        </div>
+                    )}
+                    
                     <div className="modal-actions">
                         <button type="submit">Сохранить</button>
                         <button type="button" onClick={onClose}>Отмена</button>

@@ -7,6 +7,8 @@ export interface Task {
     status: 'todo' | 'inprogress' | 'done';
     priority: Priority;
     createdAt: Date;
+    dueDate?: Date;
+    hasNotification?: boolean;
 }
 
 export interface Column {

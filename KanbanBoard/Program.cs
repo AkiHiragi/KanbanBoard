@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using KanbanBoard.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,32 +26,6 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    _ = Task.Run(async () =>
-    {
-        await Task.Delay(2000);
-
-        try
-        {
-            var clientPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "client");
-            if (Directory.Exists(clientPath))
-            {
-                var processInfo = new ProcessStartInfo
-                {
-                    FileName         = "cmd",
-                    Arguments        = "/c npm start",
-                    WorkingDirectory = clientPath,
-                    UseShellExecute  = false,
-                    CreateNoWindow   = true
-                };
-                Process.Start(processInfo);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Не удалось запустить React: {ex.Message}");
-        }
-    });
-
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {

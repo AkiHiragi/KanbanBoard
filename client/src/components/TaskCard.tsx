@@ -1,6 +1,7 @@
 import {Task} from "../types";
 import React from "react";
 import {useDraggable} from "@dnd-kit/core";
+import { format, isPast, isToday } from 'date-fns';
 
 interface TaskCardProps {
     task: Task;
@@ -50,30 +51,47 @@ const TaskCard: React.FC<TaskCardProps> = ({task, onEdit, onDelete}) => {
         }
     }
 
+    // Предотвращаем перетаскивание при клике на кнопки
+    const handleButtonClick = (e: React.MouseEvent) => {
+        // Останавливаем всплытие события, чтобы не активировать drag
+        e.stopPropagation();
+    };
+
     return (
-        <div className="task-card"
-             ref={setNodeRef}
-             style={{
-                 ...style,
-                 borderLeftColor: getPriorityColor(task.priority)
-             }}
-        >
-            <div
-                className="task-drag-handle"
+        <div className="task-card-wrapper">
+            <div className="task-card"
+                ref={setNodeRef}
+                style={{
+                    ...style,
+                    borderLeftColor: getPriorityColor(task.priority)
+                }}
                 {...listeners}
                 {...attributes}
             >
-                <div className="task-header">
-                    <h4>{task.title}</h4>
-                    <span className="priotiry-badge">
-                        {getPriorityIcon(task.priority)}
-                    </span>
+                <div className="task-content">
+                    <div className="task-header">
+                        <h4>{task.title}</h4>
+                        <span className="priotiry-badge">
+                            {getPriorityIcon(task.priority)}
+                        </span>
+                    </div>
+                    {task.description && <p>{task.description}</p>}
+                    
+                    {task.dueDate && (
+                        <div className={`task-due-date ${isPast(task.dueDate) && task.status !== 'done' ? 'overdue' : ''} ${isToday(task.dueDate) ? 'today' : ''}`}>
+                            <span className="due-date-icon">{task.hasNotification ? '🔔' : '⏰'}</span>
+                            <span>{format(task.dueDate, 'dd.MM.yyyy HH:mm')}</span>
+                        </div>
+                    )}
                 </div>
-                {task.description && <p>{task.description}</p>}
             </div>
-            <div className="task-actions">
-                <button onClick={() => onEdit(task)}>Изменить</button>
-                <button onClick={() => onDelete(task.id)}>Удалить</button>
+            <div className="task-actions" onClick={handleButtonClick}>
+                <button onClick={() => onEdit(task)}>
+                    Изменить
+                </button>
+                <button onClick={() => onDelete(task.id)}>
+                    Удалить
+                </button>
             </div>
         </div>
     );
