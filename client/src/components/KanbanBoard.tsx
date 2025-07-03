@@ -11,7 +11,8 @@ import {
     useSensor,
     useSensors
 } from "@dnd-kit/core";
-
+import { apiService } from '../services/api';
+import { convertApiTaskToTask, convertTaskToCreateRequest } from '../utils/taskConverter';
 
 const KanbanBoard: React.FC = () => {
     const [columns, setColumns] = useState<ColumnType[]>([
@@ -25,27 +26,30 @@ const KanbanBoard: React.FC = () => {
     const [currentStatus, setCurrentStatus] = useState<'todo' | 'inprogress' | 'done'>('todo');
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const sensors = useSensors(useSensor(PointerSensor));
 
     useEffect(() => {
-        const saved = localStorage.getItem('kanban-tasks');
-        if (saved) {
-            const tasks: Task[] = JSON.parse(saved);
+        loadTasks();
+    }, []);
+
+    const loadTasks = async () => {
+        try {
+            setLoading(true);
+            const apiTasks = await apiService.getTasks();
+            const tasks = apiTasks.map(convertApiTaskToTask);
+
             setColumns(prev => prev.map(col => ({
                 ...col,
                 tasks: tasks.filter(task => task.status === col.status)
             })));
+        } catch (error) {
+            console.error('Ошибка загрузки задач:', error);
+        } finally {
+            setLoading(false);
         }
-    }, []);
-
-    const saveTasks = (allTasks: Task[]) => {
-        localStorage.setItem('kanban-tasks', JSON.stringify(allTasks));
-    }
-
-    const getAllTasks = (): Task[] => {
-        return columns.flatMap(col => col.tasks);
-    }
+    };
 
     const handleAddTask = (status: 'todo' | 'inprogress' | 'done') => {
         setCurrentStatus(status);
@@ -59,26 +63,22 @@ const KanbanBoard: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const handleSaveTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
-        if (editingTask) {
-            const updatedTask = {...editingTask, ...taskData};
-            setColumns(prev => prev.map(col => ({
-                ...col,
-                tasks: col.tasks.map(task => task.id === updatedTask.id ? updatedTask : task)
-            })));
-            saveTasks(getAllTasks().map(task => task.id === updatedTask.id ? updatedTask : task));
-        } else {
-            const newTask: Task = {
-                id: Date.now().toString(),
-                ...taskData,
-                createdAt: new Date()
-            };
-            setColumns(prev => prev.map(col =>
-                col.status === currentStatus
-                    ? {...col, tasks: [...col.tasks, newTask]}
-                    : col
-            ));
-            saveTasks([...getAllTasks(), newTask]);
+    const handleSaveTask = async (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+        try {
+            setLoading(true);
+
+            if (editingTask) {
+                await apiService.updateTask(parseInt(editingTask.id), convertTaskToCreateRequest(taskData));
+            } else {
+                await apiService.createTask(convertTaskToCreateRequest(taskData));
+            }
+
+            await loadTasks();
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error('Ошибка сохранения задачи:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -86,30 +86,33 @@ const KanbanBoard: React.FC = () => {
         setDeleteConfirm(taskId);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (deleteConfirm) {
-            setColumns(prev => prev.map(col => ({
-                ...col,
-                tasks: col.tasks.filter(task => task.id !== deleteConfirm)
-            })));
-            saveTasks(getAllTasks().filter(task => task.id !== deleteConfirm));
-            setDeleteConfirm(null);
+            try {
+                setLoading(true);
+                await apiService.deleteTask(parseInt(deleteConfirm));
+                await loadTasks();
+                setDeleteConfirm(null);
+            } catch (error) {
+                console.error('Ошибка удаления задачи:', error);
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
     const cancelDelete = () => {
         setDeleteConfirm(null);
-    }
+    };
 
     const handleDragStart = (event: DragStartEvent) => {
         const {active} = event;
-        const task = getAllTasks().find(task => task.id === active.id);
+        const task = columns.flatMap(col => col.tasks).find(task => task.id === active.id);
         setActiveTask(task || null);
     };
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const {active, over} = event;
-        console.log('Drag end:', {active: active.id, over: over?.id});
         setActiveTask(null);
 
         if (!over) return;
@@ -117,22 +120,21 @@ const KanbanBoard: React.FC = () => {
         const taskId = active.id as string;
         const newStatus = over.id as 'todo' | 'inprogress' | 'done';
 
-        const allTasks = getAllTasks();
-        const task = allTasks.find(task => task.id === taskId);
+        const task = columns.flatMap(col => col.tasks).find(task => task.id === taskId);
 
         if (task && task.status !== newStatus) {
-            const updatedTask = {...task, status: newStatus};
-            setColumns(prev => prev.map(col => ({
-                ...col,
-                tasks: col.status === newStatus
-                    ? [...col.tasks.filter(t => t.id !== taskId), updatedTask]
-                    : col.tasks.filter(t => t.id !== taskId)
-            })));
-
-            const updatedTasks = allTasks.map(t => t.id === taskId ? updatedTask : t);
-            saveTasks(updatedTasks);
+            try {
+                setLoading(true);
+                const updatedTaskData = { ...task, status: newStatus };
+                await apiService.updateTask(parseInt(taskId), convertTaskToCreateRequest(updatedTaskData));
+                await loadTasks();
+            } catch (error) {
+                console.error('Ошибка перемещения задачи:', error);
+            } finally {
+                setLoading(false);
+            }
         }
-    }
+    };
 
     return (
         <DndContext
@@ -141,7 +143,7 @@ const KanbanBoard: React.FC = () => {
             onDragEnd={handleDragEnd}
         >
             <div className="kanban-board">
-                <h1>Канбан Доска</h1>
+                <h1>Канбан Доска {loading && '(Загрузка...)'}</h1>
                 <div className="columns">
                     {columns.map(column => (
                         <Column
@@ -166,17 +168,17 @@ const KanbanBoard: React.FC = () => {
                             <h3>⚠️ Подтвердите удаление</h3>
                             <p>Вы уверены, что хотите удалить эту задачу?</p>
                             <div className="modal-actions">
-                                <button 
+                                <button
                                     onClick={confirmDelete}
                                     className="delete-btn"
+                                    disabled={loading}
                                 >
                                     Удалить
                                 </button>
-                                <button onClick={cancelDelete}>Отмена</button>
+                                <button onClick={cancelDelete} disabled={loading}>Отмена</button>
                             </div>
                         </div>
                     </div>
-
                 )}
             </div>
             <DragOverlay>
@@ -189,7 +191,6 @@ const KanbanBoard: React.FC = () => {
             </DragOverlay>
         </DndContext>
     );
-
-}
+};
 
 export default KanbanBoard;

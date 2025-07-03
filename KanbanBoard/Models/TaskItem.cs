@@ -9,9 +9,9 @@ public enum Priority
 
 public enum TaskStatus
 {
-    Todo,
-    InProgress,
-    Done
+    Todo       = 0,
+    InProgress = 1,
+    Done       = 2
 }
 
 public class TaskItem
