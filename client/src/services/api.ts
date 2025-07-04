@@ -10,6 +10,7 @@ export interface ApiTask {
     updatedAt: string;
     dueDate?: string;
     hasNotification?: boolean;
+    tags: string;
 }
 
 export interface CreateTaskRequest {
@@ -19,6 +20,7 @@ export interface CreateTaskRequest {
     priority: number; // 1 = Low, 2 = Medium, 3 = High
     dueDate?: string;
     hasNotification?: boolean;
+    tags?: string;
 }
 
 class ApiService {

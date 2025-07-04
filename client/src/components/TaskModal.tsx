@@ -1,6 +1,6 @@
 import {Priority, Task} from "../types";
 import React, {useEffect, useState} from "react";
-import { format } from 'date-fns';
+import {format} from 'date-fns';
 
 interface TaskModalProps {
     isOpen: boolean;
@@ -16,6 +16,7 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
     const [priority, setPriority] = useState<Priority>('medium');
     const [dueDate, setDueDate] = useState<string>('');
     const [hasNotification, setHasNotification] = useState(false);
+    const [tags, setTags] = useState<string>('');
 
     useEffect(() => {
         if (task) {
@@ -24,12 +25,14 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
             setPriority(task.priority);
             setDueDate(task.dueDate ? format(task.dueDate, 'yyyy-MM-dd\'T\'HH:mm') : '');
             setHasNotification(task.hasNotification || false);
+            setTags(task.tags ? task.tags.join(', ') : '');
         } else {
             setTitle('');
             setDescription('');
             setPriority('medium');
             setDueDate('');
             setHasNotification(false);
+            setTags('');
         }
     }, [task]);
 
@@ -37,13 +40,15 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
         e.preventDefault();
         if (title.trim()) {
             onSave({
-                title: title.trim(), 
-                description: description.trim(), 
-                status, 
+                title: title.trim(),
+                description: description.trim(),
+                status,
                 priority,
                 dueDate: dueDate ? new Date(dueDate) : undefined,
-                hasNotification: dueDate ? hasNotification : false
-            });
+                hasNotification: dueDate ? hasNotification : false,
+                tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : undefined,
+            })
+            ;
             onClose();
         }
     };
@@ -67,6 +72,12 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />
+                    <input
+                        type="text"
+                        placeholder="Теги (через запятую)"
+                        value={tags}
+                        onChange={(e) => setTags(e.target.value)}
+                    />
                     <select
                         value={priority}
                         onChange={(e) => setPriority(e.target.value as Priority)}
@@ -75,7 +86,7 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
                         <option value="medium">🟡 Средний</option>
                         <option value="high">🔴 Высокий</option>
                     </select>
-                    
+
                     <div className="form-group">
                         <label htmlFor="dueDate">Дедлайн:</label>
                         <input
@@ -85,19 +96,24 @@ const TaskModal: React.FC<TaskModalProps> = ({isOpen, task, status, onSave, onCl
                             onChange={(e) => setDueDate(e.target.value)}
                         />
                     </div>
-                    
+
                     {dueDate && (
                         <div className="form-group checkbox">
                             <input
                                 type="checkbox"
                                 id="hasNotification"
                                 checked={hasNotification}
-                                onChange={(e) => setHasNotification(e.target.checked)}
+                                onChange={(e) => {
+                                    if (e.target.checked && 'Notification' in window && Notification.permission === 'default') {
+                                        Notification.requestPermission();
+                                    }
+                                    setHasNotification(e.target.checked)
+                                }}
                             />
                             <label htmlFor="hasNotification">Включить уведомление</label>
                         </div>
                     )}
-                    
+
                     <div className="modal-actions">
                         <button type="submit">Сохранить</button>
                         <button type="button" onClick={onClose}>Отмена</button>

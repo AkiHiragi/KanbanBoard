@@ -9,6 +9,7 @@ export interface Task {
     createdAt: Date;
     dueDate?: Date;
     hasNotification?: boolean;
+    tags?: string[];
 }
 
 export interface Column {

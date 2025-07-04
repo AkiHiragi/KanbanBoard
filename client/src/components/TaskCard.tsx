@@ -1,7 +1,7 @@
 import {Task} from "../types";
 import React from "react";
 import {useDraggable} from "@dnd-kit/core";
-import { format, isPast, isToday } from 'date-fns';
+import {format, isPast, isToday} from 'date-fns';
 
 interface TaskCardProps {
     task: Task;
@@ -60,13 +60,13 @@ const TaskCard: React.FC<TaskCardProps> = ({task, onEdit, onDelete}) => {
     return (
         <div className="task-card-wrapper">
             <div className="task-card"
-                ref={setNodeRef}
-                style={{
-                    ...style,
-                    borderLeftColor: getPriorityColor(task.priority)
-                }}
-                {...listeners}
-                {...attributes}
+                 ref={setNodeRef}
+                 style={{
+                     ...style,
+                     borderLeftColor: getPriorityColor(task.priority)
+                 }}
+                 {...listeners}
+                 {...attributes}
             >
                 <div className="task-content">
                     <div className="task-header">
@@ -76,9 +76,20 @@ const TaskCard: React.FC<TaskCardProps> = ({task, onEdit, onDelete}) => {
                         </span>
                     </div>
                     {task.description && <p>{task.description}</p>}
-                    
+
+                    {task.tags && task.tags.length > 0 && (
+                        <div className="task-tags">
+                            {task.tags.map((tag, index) => (
+                                <span key={index} className="task-tag">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
                     {task.dueDate && (
-                        <div className={`task-due-date ${isPast(task.dueDate) && task.status !== 'done' ? 'overdue' : ''} ${isToday(task.dueDate) ? 'today' : ''}`}>
+                        <div
+                            className={`task-due-date ${isPast(task.dueDate) && task.status !== 'done' ? 'overdue' : ''} ${isToday(task.dueDate) ? 'today' : ''}`}>
                             <span className="due-date-icon">{task.hasNotification ? '🔔' : '⏰'}</span>
                             <span>{format(task.dueDate, 'dd.MM.yyyy HH:mm')}</span>
                         </div>

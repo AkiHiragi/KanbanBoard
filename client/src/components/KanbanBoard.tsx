@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from "react";
-import {Column as ColumnType, Task} from '../types'
+import React, {use, useEffect, useState} from "react";
+import {Column as ColumnType, Priority, Task} from '../types'
 import Column from "./Column";
 import TaskModal from "./TaskModal";
 import {
@@ -11,9 +11,10 @@ import {
     useSensor,
     useSensors
 } from "@dnd-kit/core";
-import { apiService } from '../services/api';
-import { convertApiTaskToTask, convertTaskToCreateRequest } from '../utils/taskConverter';
-import { notificationService } from '../services/notification';
+import {apiService} from '../services/api';
+import {convertApiTaskToTask, convertTaskToCreateRequest} from '../utils/taskConverter';
+import {notificationService} from '../services/notification';
+import SearchAndFilter from "./SearchAndFilter";
 
 const KanbanBoard: React.FC = () => {
     const [columns, setColumns] = useState<ColumnType[]>([
@@ -28,17 +29,15 @@ const KanbanBoard: React.FC = () => {
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedPriority, setSelectedPriority] = useState<Priority | 'all'>('all');
+    const [selectedTag, setSelectedTag] = useState('');
 
     const sensors = useSensors(useSensor(PointerSensor));
 
     useEffect(() => {
         loadTasks();
-        
-        // Запрашиваем разрешение на уведомления при загрузке приложения
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-        
+
         return () => {
             // Очищаем все таймауты при размонтировании компонента
             notificationService.clearAllTimeouts();
@@ -55,7 +54,7 @@ const KanbanBoard: React.FC = () => {
                 ...col,
                 tasks: tasks.filter(task => task.status === col.status)
             })));
-            
+
             // Настраиваем уведомления для загруженных задач
             notificationService.setupNotifications(tasks);
         } catch (error) {
@@ -64,6 +63,25 @@ const KanbanBoard: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const filterTasks = (tasks: Task[]) => {
+        return tasks.filter(task => {
+            const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+            const matchesPriority = selectedPriority === 'all' || task.priority === selectedPriority;
+
+            const matchesTag = !selectedTag || (task.tags && task.tags.includes(selectedTag));
+
+            return matchesSearch && matchesPriority && matchesTag;
+        });
+    };
+
+    const getAllTags = () => {
+        const allTags = columns.flatMap(col => col.tasks.flatMap(task => task.tags || []));
+        return Array.from(new Set(allTags)).sort();
+    };
+
 
     const handleAddTask = (status: 'todo' | 'inprogress' | 'done') => {
         setCurrentStatus(status);
@@ -84,22 +102,22 @@ const KanbanBoard: React.FC = () => {
             if (editingTask) {
                 // Сбрасываем уведомление для задачи, если она изменилась
                 notificationService.resetTask(editingTask.id);
-                
+
                 // Обновляем локальное состояние сразу
-                const updatedTask = { ...editingTask, ...taskData };
-                
+                const updatedTask = {...editingTask, ...taskData};
+
                 setColumns(prev => prev.map(col => ({
                     ...col,
-                    tasks: col.tasks.map(task => 
-                        task.id === editingTask.id 
-                            ? { ...task, ...taskData, id: task.id, createdAt: task.createdAt }
+                    tasks: col.tasks.map(task =>
+                        task.id === editingTask.id
+                            ? {...task, ...taskData, id: task.id, createdAt: task.createdAt}
                             : task
                     )
                 })));
-                
+
                 // Отправляем запрос на сервер
                 await apiService.updateTask(parseInt(editingTask.id), convertTaskToCreateRequest(taskData));
-                
+
                 // Настраиваем уведомление для обновленной задачи
                 if (updatedTask.dueDate && updatedTask.hasNotification) {
                     notificationService.setupNotifications([updatedTask]);
@@ -108,14 +126,14 @@ const KanbanBoard: React.FC = () => {
                 // Для новой задачи ждем ответа сервера, чтобы получить ID
                 const newTask = await apiService.createTask(convertTaskToCreateRequest(taskData));
                 const clientTask = convertApiTaskToTask(newTask);
-                
+
                 // Добавляем новую задачу в соответствующую колонку
-                setColumns(prev => prev.map(col => 
-                    col.status === clientTask.status 
-                        ? { ...col, tasks: [...col.tasks, clientTask] }
+                setColumns(prev => prev.map(col =>
+                    col.status === clientTask.status
+                        ? {...col, tasks: [...col.tasks, clientTask]}
                         : col
                 ));
-                
+
                 // Настраиваем уведомление для новой задачи
                 if (clientTask.dueDate && clientTask.hasNotification) {
                     notificationService.setupNotifications([clientTask]);
@@ -140,16 +158,16 @@ const KanbanBoard: React.FC = () => {
         if (deleteConfirm) {
             try {
                 setLoading(true);
-                
+
                 // Сбрасываем уведомление для удаляемой задачи
                 notificationService.resetTask(deleteConfirm);
-                
+
                 // Обновляем локальное состояние сразу
                 setColumns(prev => prev.map(col => ({
                     ...col,
                     tasks: col.tasks.filter(task => task.id !== deleteConfirm)
                 })));
-                
+
                 // Отправляем запрос на сервер
                 await apiService.deleteTask(parseInt(deleteConfirm));
                 setDeleteConfirm(null);
@@ -190,10 +208,10 @@ const KanbanBoard: React.FC = () => {
                 if (newStatus === 'done' && task.dueDate && task.hasNotification) {
                     notificationService.resetTask(task.id);
                 }
-                
+
                 // Обновляем состояние локально для мгновенной реакции UI
                 const updatedTask = {...task, status: newStatus};
-                
+
                 setColumns(prev => prev.map(col => ({
                     ...col,
                     tasks: col.status === task.status
@@ -202,7 +220,7 @@ const KanbanBoard: React.FC = () => {
                             ? [...col.tasks, updatedTask]
                             : col.tasks
                 })));
-                
+
                 // Затем отправляем запрос на сервер
                 setLoading(true);
                 await apiService.updateTask(parseInt(taskId), convertTaskToCreateRequest(updatedTask));
@@ -224,11 +242,23 @@ const KanbanBoard: React.FC = () => {
         >
             <div className="kanban-board">
                 <h1>Канбан Доска {loading && '(Загрузка...)'}</h1>
+                <SearchAndFilter
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    selectedPriority={selectedPriority}
+                    onPriorityChange={setSelectedPriority}
+                    selectedTag={selectedTag}
+                    onTagChange={setSelectedTag}
+                    availableTags={getAllTags()}
+                />
                 <div className="columns">
-                    {columns.map(column => (
+                    {columns.map(column => (                        
                         <Column
                             key={column.id}
-                            column={column}
+                            column={{
+                                ...column,
+                                tasks: filterTasks(column.tasks)
+                            }}
                             onAddTask={handleAddTask}
                             onEditTask={handleEditTask}
                             onDeleteTask={handleDeleteTask}
@@ -269,8 +299,8 @@ const KanbanBoard: React.FC = () => {
                                 <div className="task-header">
                                     <h4>{activeTask.title}</h4>
                                     <span className="priotiry-badge">
-                                        {activeTask.priority === 'high' ? '🔴' : 
-                                         activeTask.priority === 'medium' ? '🟡' : '🟢'}
+                                        {activeTask.priority === 'high' ? '🔴' :
+                                            activeTask.priority === 'medium' ? '🟡' : '🟢'}
                                     </span>
                                 </div>
                                 {activeTask.description && <p>{activeTask.description}</p>}
