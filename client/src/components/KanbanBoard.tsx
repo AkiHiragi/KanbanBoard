@@ -15,6 +15,7 @@ import {apiService} from '../services/api';
 import {convertApiTaskToTask, convertTaskToCreateRequest} from '../utils/taskConverter';
 import {notificationService} from '../services/notification';
 import SearchAndFilter from "./SearchAndFilter";
+import ThemeToggle from "./ThemeToggle";
 
 const KanbanBoard: React.FC = () => {
     const [columns, setColumns] = useState<ColumnType[]>([
@@ -241,7 +242,10 @@ const KanbanBoard: React.FC = () => {
             onDragEnd={handleDragEnd}
         >
             <div className="kanban-board">
-                <h1>Канбан Доска {loading && '(Загрузка...)'}</h1>
+                <div className={"board-header"}>
+                    <h1>Канбан Доска {loading && '(Загрузка...)'}</h1>
+                    <ThemeToggle/>
+                </div>
                 <SearchAndFilter
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
@@ -252,7 +256,7 @@ const KanbanBoard: React.FC = () => {
                     availableTags={getAllTags()}
                 />
                 <div className="columns">
-                    {columns.map(column => (                        
+                    {columns.map(column => (
                         <Column
                             key={column.id}
                             column={{

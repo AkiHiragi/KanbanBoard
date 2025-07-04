@@ -1,5 +1,60 @@
+:root {
+    /* Светлая тема */
+    --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-secondary: rgba(255, 255, 255, 0.95);
+    --bg-card: white;
+    --text-primary: #172b4d;
+    --text-secondary: #5e6c84;
+    --text-light: white;
+    --border-color: #ddd;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --shadow-hover: rgba(0, 0, 0, 0.15);
+    
+}
+
+[data-theme="dark"] {
+    /* Темная тема */
+    --bg-primary: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    --bg-secondary: rgba(52, 73, 94, 0.95);
+    --bg-card: #4a5568;
+    --text-primary: #e2e8f0;
+    --text-secondary: #a0aec0;
+    --text-light: #f7fafc;
+    --border-color: #4a5568;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.4);
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1001;
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px var(--shadow-hover);
+}
+
+.board-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
 body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--bg-primary);
     min-height: 100vh;
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -31,7 +86,7 @@ body {
 }
 
 .column {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--bg-secondary);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
@@ -56,7 +111,7 @@ body {
 
 .column-header h3 {
     margin: 0;
-    color: #172b4d;
+    color: var(--text-primary);
     font-size: 1.2rem;
     font-weight: 600;
 }
@@ -105,19 +160,23 @@ body {
 .task-card-wrapper {
     display: flex;
     flex-direction: column;
-    background: white;
+    background: var(--bg-card);
     border-radius: 6px;
     padding: 12px;
     border-left: 4px solid #667eea;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px var(--shadow);
     transition: all 0.2s ease;
 }
 
-.task-card {
-    display: flex;
-    flex-direction: column;
-    cursor: grab;
-    transition: all 0.2s ease;
+.task-card h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+}
+
+.task-card p {
+    margin: 0 0 12px 0;
+    color: var(--text-secondary);
+    font-size: 14px;
 }
 
 .task-header {
@@ -131,17 +190,6 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.task-card h4 {
-    margin: 0 0 8px 0;
-    color: #172b4d;
-}
-
-.task-card p {
-    margin: 0 0 12px 0;
-    color: #5e6c84;
-    font-size: 14px;
-}
-
 .task-actions {
     display: flex;
     gap: 8px;
@@ -150,8 +198,9 @@ body {
 }
 
 .task-actions button {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     padding: 4px 8px;
     border-radius: 4px;
     cursor: pointer !important;
@@ -180,7 +229,8 @@ body {
 }
 
 .modal {
-    background: white;
+    background: var(--bg-card);
+    color: var(--text-primary);
     padding: 24px;
     border-radius: 8px;
     width: 400px;
@@ -205,7 +255,7 @@ body {
 
 .form-group label {
     font-size: 14px;
-    color: #5e6c84;
+    color: var(--text-secondary);
 }
 
 .form-group.checkbox {
@@ -222,9 +272,11 @@ body {
 .modal input,
 .modal textarea {
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 14px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .modal textarea {
@@ -256,10 +308,11 @@ body {
 
 .modal select {
     padding: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 14px;
-    background: white;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .column-content-over {
@@ -299,10 +352,10 @@ body {
     align-items: center;
     gap: 4px;
     font-size: 12px;
-    color: #5e6c84;
+    color: var(--text-secondary);
     margin-top: 8px;
     padding: 4px 8px;
-    background: #f8f9fa;
+    background: var(--bg-secondary);
     border-radius: 4px;
 }
 
@@ -341,12 +394,12 @@ body {
 }
 
 .task-tag {
-    background: #e3f2f2;
-    color: #1976d2;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     font-size: 11px;
     padding: 2px 6px;
     border-radius: 12px;
-    border: 1px solid #bbdefb;
+    border: 1px solid var(--border-color);
 }
 
 .search-filter-bar {
@@ -356,18 +409,20 @@ body {
     align-items: center;
     margin: 20px 0;
     padding: 16px;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--bg-secondary);
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--shadow);
 }
 
-.search-input{
+.search-input {
     flex: 1;
     max-width: 300px;
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 14px;
+    background: var(--bg-card);
+    color: var(--text-primary);
 }
 
 .search-input:focus {
@@ -378,10 +433,11 @@ body {
 
 .filter-select {
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 14px;
-    background: white;
+    background: var(--bg-card);
+    color: var(--text-primary);
     cursor: pointer;
 }
 
